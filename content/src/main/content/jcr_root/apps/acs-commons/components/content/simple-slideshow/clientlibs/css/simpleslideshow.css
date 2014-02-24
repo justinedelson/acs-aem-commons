@@ -17,22 +17,21 @@
  * limitations under the License.
  * #L%
  */
-.image_multifield_slideshow {
-    position:relative;
-    height:350px;
+.acs-commons-simple-slideshow {
+    position: relative;
 }
 
-.image_multifield_slideshow IMG {
-    position:absolute;
-    top:0;
-    left:0;
-    z-index:8;
+.acs-commons-simple-slideshow img {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 8;
 }
 
-.image_multifield_slideshow IMG.active {
-    z-index:10;
+.acs-commons-simple-slideshow img.active {
+    z-index: 10;
 }
 
-.image_multifield_slideshow IMG.last-active {
-    z-index:9;
+.acs-commons-simple-slideshow img.last-active {
+    z-index: 9;
 }

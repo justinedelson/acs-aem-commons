@@ -80,9 +80,9 @@ ACS.CQ.form.ImageMultiField.Panel = CQ.Ext.extend(CQ.Ext.Panel, {
         if(!imageName){
             imageName = image.name;
 
-            if(!imageName){
+            if (!imageName) {
                 imageName = "demo";
-            }else if(imageName.indexOf("./") === 0){
+            } else if(imageName.indexOf("./") === 0) {
                 imageName = imageName.substr(2); //get rid of ./
             }
 
