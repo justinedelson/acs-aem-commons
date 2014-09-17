@@ -46,6 +46,7 @@ ACS.CQ.wcm.SHOW_DISABLED_SIDEKICK_BUTTON = false;
     };
 
     CQ.WCM.on("sidekickready", function(sidekick) {
+        // the buttons are reloaded on every content load, so we need to add the button then
         sidekick.on("loadcontent", function() {
             if (ACS.CQ.wcm.SHOW_DISABLED_SIDEKICK_BUTTON) {
                 init(sidekick);
