@@ -32,7 +32,7 @@ ACS.CQ.wcm.SHOW_DISABLED_SIDEKICK_BUTTON = false;
                 },
                 handler: function() {
                      var url = CQ.WCM.getContentUrl();
-                     if (url.indexOf("?")) {
+                     if (url.indexOf("?") > 0) {
                          url += "&";
                      } else {
                          url += "?";
