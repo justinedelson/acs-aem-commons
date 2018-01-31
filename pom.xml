@@ -585,6 +585,12 @@
                 </plugins>
             </build>
         </profile>
+        <profile>
+            <id>release-profile</id>
+            <modules>
+                <module>repository-bundle</module>
+            </modules>
+        </profile>
     </profiles>
 
     <!--
