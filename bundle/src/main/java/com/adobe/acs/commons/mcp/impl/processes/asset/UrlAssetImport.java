@@ -64,12 +64,12 @@ import org.slf4j.LoggerFactory;
  */
 public class UrlAssetImport extends AssetIngestor {
 
-    public static String SOURCE = "source";
-    public static String TARGET_FOLDER = "target";
-    public static String ORIGINAL_FILE_NAME = "original";
-    public static String RENDITION_NAME = "rendition";
-    public static String CONTENT_BASE = "/content";
-    public static String UNKNOWN_TARGET_FOLDER = "/content/dam/unsorted";
+    public static final String SOURCE = "source";
+    public static final String TARGET_FOLDER = "target";
+    public static final String ORIGINAL_FILE_NAME = "original";
+    public static final String RENDITION_NAME = "rendition";
+    public static final String CONTENT_BASE = "/content";
+    public static final String UNKNOWN_TARGET_FOLDER = "/content/dam/unsorted";
 
     private static final Logger LOG = LoggerFactory.getLogger(UrlAssetImport.class);
     private HttpClientBuilderFactory httpFactory;
@@ -78,6 +78,7 @@ public class UrlAssetImport extends AssetIngestor {
     public UrlAssetImport(MimeTypeService mimeTypeService, HttpClientBuilderFactory httpFactory) {
         super(mimeTypeService);
         this.httpFactory = httpFactory;
+        this.importedRenditions = trackDetailedActivity("All Renditions", "Import", "Count of all rendition imports", 0L);
     }
 
     @FormField(
@@ -109,21 +110,17 @@ public class UrlAssetImport extends AssetIngestor {
 
     Spreadsheet fileData;
 
-    EnumMap<ReportColumns, Object> importedRenditions
-            = trackDetailedActivity("All Renditions", "Import", "Count of all rendition imports", 0L);
+    final Map<ReportColumns, Object> importedRenditions;
 
     @Override
     public void init() throws RepositoryException {
         super.init();
         if (httpFactory != null) {
             HttpClientBuilder clientBuilder = httpFactory.newBuilder();
-            clientBuilder.setDefaultSocketConfig(
-                    SocketConfig.custom()
-                            .setSoTimeout(timeout)
-                            .build());
             clientBuilder.setDefaultRequestConfig(
                     RequestConfig.custom()
                             .setConnectTimeout(timeout)
+                            .setSocketTimeout(timeout)
                             .build()
             );
             httpClient = clientBuilder.build();

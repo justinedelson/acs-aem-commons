@@ -57,6 +57,7 @@ public class FileAssetIngestor extends AssetIngestor {
     File baseFolder;
     
     @Override
+    @SuppressWarnings("findsecbugs:PATH_TRAVERSAL_IN" /* by design */)
     public void init() throws RepositoryException {
         baseFolder = new File(fileBasePath);
         if (!baseFolder.exists()) {

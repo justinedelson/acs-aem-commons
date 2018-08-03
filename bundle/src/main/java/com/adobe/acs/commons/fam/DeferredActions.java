@@ -59,6 +59,7 @@ public final class DeferredActions {
     /**
      * Returns opposite of its input, e.g. filterMatching(glob).andThen(not)
      */
+    @SuppressWarnings("squid:ClassVariableVisibilityCheckClass" /* can't be changed for compatibility reasons */)
     public Function<Boolean, Boolean> not = Function.adapt(Filters.NOT);
 
     /**

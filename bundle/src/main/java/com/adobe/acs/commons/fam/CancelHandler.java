@@ -29,6 +29,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * This alternative allows a single object which can cancel thousands of tasks
  * that are tied to it.
  */
+@SuppressWarnings("CQRules:CWE-676" /* intentional use of interrupt */)
 public class CancelHandler implements Serializable {
     private static final long serialVersionUID = 7526472295622776147L;
     

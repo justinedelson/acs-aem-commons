@@ -142,6 +142,10 @@ public class FileOrRendition implements HierarchialElement {
 
     private class UrlConnectionSource implements Source {
 
+        public static final int CONNECT_TIMEOUT = 30000;
+
+        public static final int READ_TIMEOUT = 30000;
+
         private final FileOrRendition thizz;
         private Long size = null;
         private URLConnection connection = null;
@@ -160,6 +164,8 @@ public class FileOrRendition implements HierarchialElement {
             if (connection == null) {
                 URL theUrl = new URL(url);
                 connection = theUrl.openConnection();
+                connection.setConnectTimeout(CONNECT_TIMEOUT);
+                connection.setReadTimeout(READ_TIMEOUT);
             }
             return connection;
         }

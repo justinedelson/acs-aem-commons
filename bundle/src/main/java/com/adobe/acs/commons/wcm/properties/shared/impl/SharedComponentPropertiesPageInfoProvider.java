@@ -85,6 +85,7 @@ public class SharedComponentPropertiesPageInfoProvider implements PageInfoProvid
     @Reference
     private SlingRepository repository;
 
+    @SuppressWarnings("AEM Rules:AEM-3" /* used for observation only */)
     private Session respositorySession;
 
     private ObservationManager observationManager;

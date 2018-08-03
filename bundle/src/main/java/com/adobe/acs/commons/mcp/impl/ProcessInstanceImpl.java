@@ -80,6 +80,8 @@ public class ProcessInstanceImpl implements ProcessInstance, Serializable {
     private transient ControlledProcessManager manager = null;
     private final transient ProcessDefinition definition;
     private transient boolean completedNormally = false;
+
+    @SuppressWarnings("squid:S2245")
     private static final transient Random RANDOM = new Random();
 
     @Override

@@ -63,6 +63,8 @@ public class ReportRunner {
     if (StringUtils.isNotBlank(reportExecutorClass)) {
       log.debug("Loading class for: {}", reportExecutorClass);
       try {
+
+        @SuppressWarnings("squid:S2658")
         Class<?> exClass = getClass().getClassLoader().loadClass(reportExecutorClass);
         Object model = request.adaptTo(exClass);
         if (model instanceof ReportExecutor) {

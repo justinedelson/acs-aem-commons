@@ -36,6 +36,7 @@ public class DynamicObjectInputStream extends ObjectInputStream
     }
 
     @Override
+    @SuppressWarnings("squid:S2658")
     protected Class<?> resolveClass(ObjectStreamClass desc)
             throws IOException, ClassNotFoundException
     {

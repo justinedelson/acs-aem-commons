@@ -57,6 +57,7 @@ import org.apache.sling.api.resource.ValueMap;
 public class WCMInboxWebConsolePlugin extends HttpServlet {
 
     @Reference
+    @SuppressWarnings("squid:S2226")
     private ResourceResolverFactory rrFactory;
 
     private static final String SERVICE_NAME = "wcm-inbox-cleanup";

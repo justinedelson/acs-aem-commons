@@ -65,7 +65,7 @@ public class AudioHelperImpl implements AudioHelper {
     }
 
     @Override
-    @SuppressWarnings("squid:S2095")
+    @SuppressWarnings({"squid:S2095", "findsecbugs:PATH_TRAVERSAL_IN" /* only in temporary directory created for this purpose */})
     public <A, R> R process(Asset asset, ResourceResolver resourceResolver, A args, AudioProcessor<A, R> audioProcessor)
             throws AudioException {
         File tmpDir = null;

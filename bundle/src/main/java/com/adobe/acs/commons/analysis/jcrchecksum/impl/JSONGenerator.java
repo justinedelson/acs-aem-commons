@@ -55,6 +55,7 @@ import java.util.TreeMap;
  * (via {@link ChecksumGeneratorOptions}).
  */
 @ProviderType
+@SuppressWarnings("squid:S2070" /* not a secure context. SHA-1 is OK */)
 public final class JSONGenerator {
     private static final Logger log = LoggerFactory.getLogger(ChecksumGenerator.class);
 
@@ -166,7 +167,6 @@ public final class JSONGenerator {
      * @param opts
      * @param out
      * @throws RepositoryException
-     * @throws JSONException
      * @throws ValueFormatException
      * @throws IOException 
      */
@@ -249,8 +249,7 @@ public final class JSONGenerator {
      * @param opts
      * @param out
      * @throws RepositoryException
-     * @throws IOException 
-     * @throws JSONException
+     * @throws IOException
      */
     private static void outputChildNodes(Node node, ChecksumGeneratorOptions opts, JsonWriter out)
             throws RepositoryException, IOException {

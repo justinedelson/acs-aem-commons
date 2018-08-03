@@ -171,7 +171,7 @@ public class SystemNotificationsImpl extends AbstractHtmlRequestInjector impleme
     public String getNotificationId(final Page notificationPage) {
         final String path = notificationPage.getPath();
         final String lastModified = String.valueOf(notificationPage.getLastModified().getTimeInMillis());
-        return "uid-" + DigestUtils.shaHex(path + lastModified);
+        return "uid-" + DigestUtils.sha256Hex(path + lastModified);
     }
 
     @Override

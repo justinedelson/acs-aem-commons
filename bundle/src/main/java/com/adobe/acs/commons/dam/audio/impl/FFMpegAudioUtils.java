@@ -34,6 +34,7 @@ public class FFMpegAudioUtils {
     private FFMpegAudioUtils() {
     }
 
+    @SuppressWarnings("findsecbugs:PATH_TRAVERSAL_IN" /* This is only called from trusted sources. */)
     public static File resolveWorkingDir(String slingHome, String path) {
         if (path == null) {
             path = "";

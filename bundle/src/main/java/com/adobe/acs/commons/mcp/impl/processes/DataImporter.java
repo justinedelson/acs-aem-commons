@@ -140,12 +140,9 @@ public class DataImporter extends ProcessDefinition {
     }
 
     Spreadsheet data;
-    List<EnumMap<ReportColumns, Object>> reportRows;
+    final List<EnumMap<ReportColumns, Object>> reportRows = Collections.synchronizedList(new ArrayList<>());
 
-    protected synchronized EnumMap<ReportColumns, Object> trackActivity(String item, String action, Integer count) {
-        if (reportRows == null) {
-            reportRows = Collections.synchronizedList(new ArrayList<>());
-        }
+    protected EnumMap<ReportColumns, Object> trackActivity(String item, String action, Integer count) {
         EnumMap<ReportColumns, Object> reportRow = new EnumMap<>(ReportColumns.class);
         reportRow.put(ReportColumns.item, item);
         reportRow.put(ReportColumns.action, action);

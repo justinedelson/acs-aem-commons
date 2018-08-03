@@ -50,6 +50,7 @@ import java.util.Map;
  * Base class for services to extend which want to manage other services based
  * on repository configurations.
  */
+@SuppressWarnings("findbugs:IS2_INCONSISTENT_SYNC" /* false positive */)
 public abstract class ResourceServiceManager extends AnnotatedStandardMBean
         implements ResourceServiceManagerMBean, EventHandler {
 

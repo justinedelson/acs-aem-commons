@@ -375,6 +375,7 @@ public class HealthCheckStatusEmailer implements Runnable {
      * @return the result of the command
      * @throws IOException
      */
+    @SuppressWarnings("squid:S2076" /* Only called internally */)
     private String execReadToString(String execCommand) throws IOException {
         Process proc = Runtime.getRuntime().exec(execCommand);
         try (InputStream stream = proc.getInputStream()) {

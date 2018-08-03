@@ -107,14 +107,14 @@ public class ReportCSVExportServlet extends SlingSafeMethodsServlet {
 
   private List<ReportCellCSVExporter> writeHeaders(SlingHttpServletRequest request, final Csv csv)
       throws IOException {
-    List<String> row = new ArrayList();
-    List<ReportCellCSVExporter> exporters = new ArrayList();
+    List<String> row = new ArrayList<>();
+    List<ReportCellCSVExporter> exporters = new ArrayList<>();
     for (Resource column : request.getResource().getChild("columns").getChildren()) {
       String className = column.getValueMap().get("exporter", String.class);
       if (!StringUtils.isEmpty(className)) {
         try {
           log.debug("Finding ReportCellCSVExporter for {}", className);
-          @SuppressWarnings("unchecked")
+          @SuppressWarnings({"unchecked", "squid:S2658"})
           Class<ReportCellCSVExporter> clazz = (Class<ReportCellCSVExporter>) getClass().getClassLoader()
               .loadClass(className);
           ReportCellCSVExporter exporter = column.adaptTo(clazz);

@@ -49,6 +49,8 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 public abstract class AssetIngestor extends ProcessDefinition {
 
@@ -68,6 +70,11 @@ public abstract class AssetIngestor extends ProcessDefinition {
 
     public AssetIngestor(MimeTypeService mimeTypeService) {
         this.mimetypeService = mimeTypeService;
+        this.reportRows = Collections.synchronizedList(new ArrayList<>());
+        this.createdFolders = trackActivity("All folders", "Create", "Count of all folders created", 0L);
+        this.importedAssets = trackActivity(ALL_ASSETS, "Import", "Count of all assets imports", 0L);
+        this.skippedFiles = trackActivity(ALL_ASSETS, "Skipped", "Count of skipped files", 0L);
+        this.importedData = trackActivity(ALL_ASSETS, "Data imported", "Count of bytes imported", 0L);
     }
 
     @FormField(
@@ -162,27 +169,20 @@ public abstract class AssetIngestor extends ProcessDefinition {
     protected static final String DEFAULT_FOLDER_TYPE = "sling:Folder";
     protected static final String CHANGED_BY_WORKFLOW = "changedByWorkflowProcess";
 
-    EnumMap<ReportColumns, Object> createdFolders
-            = trackActivity("All folders", "Create", "Count of all folders created", 0L);
-    EnumMap<ReportColumns, Object> importedAssets
-            = trackActivity(ALL_ASSETS, "Import", "Count of all assets imports", 0L);
-    EnumMap<ReportColumns, Object> skippedFiles
-            = trackActivity(ALL_ASSETS, "Skipped", "Count of skipped files", 0L);
-    EnumMap<ReportColumns, Object> importedData
-            = trackActivity(ALL_ASSETS, "Data imported", "Count of bytes imported", 0L);
+    final Map<ReportColumns, Object> createdFolders;
+    final Map<ReportColumns, Object> importedAssets;
+    final Map<ReportColumns, Object> skippedFiles;
+    final Map<ReportColumns, Object> importedData;
 
     @SuppressWarnings("squid:S00115")
     public static enum ReportColumns {
         item, action, description, count, @FieldFormat(ValueFormat.storageSize) bytes
     }
 
-    List<EnumMap<ReportColumns, Object>> reportRows;
+    final List<Map<ReportColumns, Object>> reportRows;
 
-    private synchronized EnumMap<ReportColumns, Object> trackActivity(String item, String action, String description, Long bytes) {
-        if (reportRows == null) {
-            reportRows = Collections.synchronizedList(new ArrayList<>());
-        }
-        EnumMap<ReportColumns, Object> reportRow = new EnumMap<>(ReportColumns.class);
+    private Map<ReportColumns, Object> trackActivity(String item, String action, String description, Long bytes) {
+        Map<ReportColumns, Object> reportRow = Collections.synchronizedMap(new EnumMap<>(ReportColumns.class));
         reportRow.put(ReportColumns.item, item);
         reportRow.put(ReportColumns.action, action);
         reportRow.put(ReportColumns.description, description);
@@ -192,7 +192,7 @@ public abstract class AssetIngestor extends ProcessDefinition {
         return reportRow;
     }
 
-    protected synchronized EnumMap<ReportColumns, Object> trackDetailedActivity(String item, String action, String description, Long bytes) {
+    protected Map<ReportColumns, Object> trackDetailedActivity(String item, String action, String description, Long bytes) {
         if (detailedReport) {
             return trackActivity(item, action, description, bytes);
         } else {
@@ -201,7 +201,7 @@ public abstract class AssetIngestor extends ProcessDefinition {
     }
 
     @SuppressWarnings("squid:S2445")
-    private void increment(EnumMap<ReportColumns, Object> row, ReportColumns col, long amt) {
+    private void increment(Map<ReportColumns, Object> row, ReportColumns col, long amt) {
         if (row != null) {
             synchronized (row) {
                 row.put(col, (Long) row.getOrDefault(col, 0) + amt);
@@ -209,15 +209,15 @@ public abstract class AssetIngestor extends ProcessDefinition {
         }
     }
 
-    protected void incrementCount(EnumMap<ReportColumns, Object> row, long amt) {
+    protected void incrementCount(Map<ReportColumns, Object> row, long amt) {
         increment(row, ReportColumns.count, amt);
     }
 
-    protected void incrementBytes(EnumMap<ReportColumns, Object> row, long amt) {
+    protected void incrementBytes(Map<ReportColumns, Object> row, long amt) {
         increment(row, ReportColumns.bytes, amt);
     }
 
-    protected long getCount(EnumMap<ReportColumns, Object> row) {
+    protected long getCount(Map<ReportColumns, Object> row) {
         return (long) row.getOrDefault(ReportColumns.count, 0);
     }
 
@@ -425,7 +425,7 @@ public abstract class AssetIngestor extends ProcessDefinition {
 
     @Override
     public void storeReport(ProcessInstance instance, ResourceResolver rr) throws RepositoryException, PersistenceException {
-        report.setRows(reportRows, ReportColumns.class);
+        report.setRows(reportRows.stream().map(EnumMap::new).collect(Collectors.toList()), ReportColumns.class);
         report.persist(rr, instance.getPath() + "/jcr:content/report");
     }
 

@@ -94,7 +94,7 @@ public class TimedRunnable implements Runnable {
         runner.logCompletion(created, started, executed, finished, successful, error);
     }
 
-    @SuppressWarnings("squid:S2142")
+    @SuppressWarnings({"squid:S2142", "CQRules:CWE-676" /* intentional use of interrupt */})
     private Runnable watchThread(Thread workThread, Semaphore timerSemaphore) {
         return () -> {
             boolean finished1 = false;
