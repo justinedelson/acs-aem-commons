@@ -34,7 +34,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import com.adobe.acs.commons.adobeio.service.Endpoint;
+import com.drew.lang.annotations.Nullable;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.CharEncoding;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.StopWatch;
@@ -69,9 +72,7 @@ public class EndpointServiceImpl implements EndpointService {
    private static final Logger LOGGER = LoggerFactory.getLogger(EndpointServiceImpl.class);
 
    private String id;
-   private String url;
-   private String method;
-   private List<Map.Entry<String, String>> specificServiceHeaders;
+
    private EndpointConfiguration config;
 
    @Reference
@@ -80,14 +81,14 @@ public class EndpointServiceImpl implements EndpointService {
    @Reference
    private AdobeioHelper helper;
 
+   private EndpointImpl baseEndpoint;
+
    @Activate
    protected void activate(final EndpointConfiguration config) throws Exception {
       LOGGER.debug("Start ACTIVATE Endpoint {}", config.id());
       this.id = config.id();
-      this.url = config.endpoint();
-      this.method = config.method();
       this.config = config;
-      setServiceSpecificHeaders(config.specificServiceHeaders());
+      this.baseEndpoint = builder().build();
       LOGGER.debug("End ACTIVATE Endpoint {}", id);
    }
 
@@ -95,58 +96,21 @@ public class EndpointServiceImpl implements EndpointService {
    public String getId() {
       return this.id;
    }
-
-   @Override
-   public String getMethod() {
-      return this.method;
-   }
-
-   @Override
-   public String getUrl() {
-      return this.url;
-   }
-
-   @Override
-   public void setUrl(String url) {
-      this.url = url;
-   }
    
-   @Override
-   public void setServiceSpecificHeaders(String[] specificServiceHeaders) {
+   private static List<Map.Entry<String, String>> parseServiceSpecificHeaders(@Nullable String[] specificServiceHeaders) {
       if (specificServiceHeaders == null) {
-         this.specificServiceHeaders = Collections.emptyList();
+         return Collections.emptyList();
       } else {
-         this.specificServiceHeaders = Arrays.asList(specificServiceHeaders).stream()
+         return Arrays.asList(specificServiceHeaders).stream()
                .map(s -> ParameterUtil.toMapEntry(s, ":"))
              .filter(e -> e != null).collect(Collectors.toList());
       }
-   }
-   
-   @Override
-   public String[] getConfigServiceSpecificHeaders() {
-      return config.specificServiceHeaders();
-   }
-
-   @Override
-   public JsonObject performIO_Action() {
-      return performio(url, Collections.emptyMap());
-   }
-
-   @Override
-   public JsonObject performIO_Action(@NotNull Map<String, String> queryParameters) {
-      return performio(url, queryParameters);
-   }
-
-
-   @Override
-   public JsonObject performIO_Action(@NotNull JsonObject payload) {
-      return handleAdobeIO_Action( payload);
    }
 
    @Override
    public boolean isConnected() {
       try {
-         JsonObject response = processGet(new URIBuilder(url).build());
+         JsonObject response = baseEndpoint.processGet(new URIBuilder(baseEndpoint.url).build());
          return !response.has(RESULT_ERROR);
       } catch (Exception e) {
          LOGGER.error("Problem testing the connection for {}", id, e);
@@ -154,171 +118,290 @@ public class EndpointServiceImpl implements EndpointService {
       return false;
    }
 
-   // --------------- PRIVATE METHODS ----------------- //
-
-   /**
-    * This method performs the Adobe I/O action
-    *
-    * @param payload
-    *            Payload of the call
-    * @return JsonObject containing the result
-    */
-   private JsonObject handleAdobeIO_Action( @NotNull final JsonObject payload) {
-      // initialize jsonobject
-      JsonObject processResponse = new JsonObject();
-
-      // perform action, if the action is defined in the configuration
-      try {
-         LOGGER.debug("ActionUrl = {} . method = {}", url, method);
-         // process the Adobe I/O action
-         processResponse = process(url, Collections.emptyMap(), method, payload);
-      } catch (Exception e) {
-         processResponse.addProperty(RESULT_ERROR, "Problem processing");
-         LOGGER.error("Problem processing action {} in handleAdobeIO_Action", url);
-      }
-
-      return processResponse;
+   @Override
+   public String getMethod() {
+      return baseEndpoint.getMethod();
    }
 
-   /**
-    * Process the Adobe I/O action
-    * 
-    * @param actionUrl
-    *            The url to be executed
-    * @param queryParameters
-    *            The query parameters to pass
-    * @param method
-    *            The method to be executed
-    * @param payload
-    *            The payload of the call
-    * @return JsonObject containing the result of the action
-    * @throws Exception
-    *             Thrown when process-action throws an exception
-    */
-   private JsonObject process(@NotNull final String actionUrl, @NotNull final Map<String, String> queryParameters,
-                              @NotNull final String method,
-                              @NotNull final JsonObject payload) throws IOException, URISyntaxException {
-      if (isBlank(actionUrl) || isBlank(method)) {
+   @Override
+   public String getUrl() {
+      return baseEndpoint.getUrl();
+   }
+
+   @Override
+   public String[] getServiceSpecificHeaders() {
+      return baseEndpoint.getServiceSpecificHeaders();
+   }
+
+   @Override
+   public JsonObject performIO_Action() {
+      return baseEndpoint.performIO_Action();
+   }
+
+   @Override
+   public JsonObject performIO_Action(Map<String, String> queryParameters) {
+      return baseEndpoint.performIO_Action(queryParameters);
+   }
+
+   @Override
+   public JsonObject performIO_Action(JsonObject payload) {
+      return baseEndpoint.performIO_Action(payload);
+   }
+
+   @Override
+   public EndpointBuilderImpl builder() {
+      return new EndpointBuilderImpl();
+   }
+
+   private class EndpointBuilderImpl implements EndpointBuilder {
+      private String method = config.method();
+      private String url = config.endpoint();
+      private String[] serviceSpecificHeaders = config.specificServiceHeaders();
+
+
+      @Override
+      public EndpointBuilder withMethod(String method) {
+         this.method = method;
+         return this;
+      }
+
+      @Override
+      public EndpointBuilder withUrl(String url) {
+         this.url = url;
+         return this;
+      }
+
+      @Override
+      public EndpointBuilder withServiceSpecificHeaders(String[] serviceSpecificHeaders, boolean merge) {
+         if (merge) {
+            this.serviceSpecificHeaders = serviceSpecificHeaders;
+         } else {
+            this.serviceSpecificHeaders = ArrayUtils.addAll(config.specificServiceHeaders(), serviceSpecificHeaders);
+         }
+         return this;
+      }
+
+      @Override
+      public EndpointImpl build() {
+         return new EndpointImpl(method, url, serviceSpecificHeaders, integrationService, helper);
+      }
+   }
+
+   private static class EndpointImpl implements Endpoint {
+      private final String url;
+      private final String method;
+      private final List<Map.Entry<String, String>> specificServiceHeaders;
+      private final IntegrationService integrationService;
+      private final AdobeioHelper helper;
+
+      private EndpointImpl(String method, String url, String[] specificServiceHeaders, IntegrationService integrationService, AdobeioHelper helper) {
+         this.method = method;
+         this.url = url;
+         this.specificServiceHeaders = parseServiceSpecificHeaders(specificServiceHeaders);
+         this.integrationService = integrationService;
+         this.helper = helper;
+      }
+
+      @Override
+      public String getMethod() {
+         return this.method;
+      }
+
+      @Override
+      public String getUrl() {
+         return this.url;
+      }
+
+      @Override
+      public String[] getServiceSpecificHeaders() {
+         return specificServiceHeaders.stream().map(e -> String.format("%s:%s", e.getKey(), e.getValue())).collect(Collectors.toList()).toArray(new String[0]);
+      }
+
+      @Override
+      public JsonObject performIO_Action() {
+         return performio(url, Collections.emptyMap());
+      }
+
+      @Override
+      public JsonObject performIO_Action(@NotNull Map<String, String> queryParameters) {
+         return performio(url, queryParameters);
+      }
+
+
+      @Override
+      public JsonObject performIO_Action(@NotNull JsonObject payload) {
+         return handleAdobeIO_Action( payload);
+      }
+
+
+      // --------------- PRIVATE METHODS ----------------- //
+
+      /**
+       * This method performs the Adobe I/O action
+       *
+       * @param payload
+       *            Payload of the call
+       * @return JsonObject containing the result
+       */
+      private JsonObject handleAdobeIO_Action( @NotNull final JsonObject payload) {
+         // initialize jsonobject
+         JsonObject processResponse = new JsonObject();
+
+         // perform action, if the action is defined in the configuration
+         try {
+            LOGGER.debug("ActionUrl = {} . method = {}", url, method);
+            // process the Adobe I/O action
+            processResponse = process(url, Collections.emptyMap(), method, payload);
+         } catch (Exception e) {
+            processResponse.addProperty(RESULT_ERROR, "Problem processing");
+            LOGGER.error("Problem processing action {} in handleAdobeIO_Action", url);
+         }
+
+         return processResponse;
+      }
+
+      /**
+       * Process the Adobe I/O action
+       *
+       * @param actionUrl
+       *            The url to be executed
+       * @param queryParameters
+       *            The query parameters to pass
+       * @param method
+       *            The method to be executed
+       * @param payload
+       *            The payload of the call
+       * @return JsonObject containing the result of the action
+       * @throws Exception
+       *             Thrown when process-action throws an exception
+       */
+      private JsonObject process(@NotNull final String actionUrl, @NotNull final Map<String, String> queryParameters,
+                                 @NotNull final String method,
+                                 @NotNull final JsonObject payload) throws IOException, URISyntaxException {
+         if (isBlank(actionUrl) || isBlank(method)) {
             LOGGER.error("Method or action is null");
+            return new JsonObject();
+         }
+
+         URIBuilder builder = new URIBuilder(actionUrl);
+         queryParameters.forEach((k, v) -> builder.addParameter(k, v));
+
+         URI uri = builder.build();
+
+         LOGGER.debug("Performing method = {}. queryParameters = {}. actionUrl = {}. payload = {}", method, queryParameters, uri, payload);
+
+         if (StringUtils.equalsIgnoreCase(method, METHOD_POST)) {
+            return processPost(uri, payload);
+         } else if (StringUtils.equalsIgnoreCase(method, METHOD_GET)) {
+            return processGet(uri);
+         } else if (StringUtils.equalsIgnoreCase(method, "PATCH")) {
+            return processPatch(uri, payload);
+         } else {
+            return new JsonObject();
+         }
+      }
+
+      private JsonObject processGet(@NotNull final URI uri) throws IOException {
+         StopWatch stopWatch = new StopWatch();
+         LOGGER.debug("STARTING STOPWATCH {}", uri);
+         stopWatch.start();
+
+         HttpGet get = new HttpGet(uri);
+         get.setHeader(AUTHORIZATION, BEARER + integrationService.getAccessToken());
+         get.setHeader(CACHE_CONTRL, NO_CACHE);
+         get.setHeader(X_API_KEY, integrationService.getApiKey());
+         get.setHeader(CONTENT_TYPE, CONTENT_TYPE_APPLICATION_JSON);
+         addHeaders(get);
+
+         try (CloseableHttpClient httpClient = helper.getHttpClient(integrationService.getTimeoutinMilliSeconds())) {
+            CloseableHttpResponse response = httpClient.execute(get);
+            final JsonObject result = responseAsJson(response);
+
+            LOGGER.debug("Response-code {}", response.getStatusLine().getStatusCode());
+            LOGGER.debug("STOPPING STOPWATCH {}", uri);
+            stopWatch.stop();
+            LOGGER.debug("Stopwatch time: {}", stopWatch);
+            stopWatch.reset();
+
+            return result;
+         }
+      }
+
+      private JsonObject processPost(@NotNull final URI uri, @NotNull final JsonObject payload)
+          throws IOException {
+         HttpPost post = new HttpPost(uri);
+         return (payload != null) && isNotBlank(payload.toString()) ? processRequestWithBody(post, payload) : new JsonObject();
+      }
+
+      private JsonObject processPatch(@NotNull final URI uri, @NotNull final JsonObject payload)
+          throws IOException {
+         HttpPatch patch = new HttpPatch(uri);
+         return (payload != null) && isNotBlank(payload.toString()) ? processRequestWithBody(patch, payload) : new JsonObject();
+      }
+
+      private JsonObject processRequestWithBody(@NotNull final HttpEntityEnclosingRequestBase base,
+                                                @NotNull final JsonObject payload) throws IOException {
+
+         StopWatch stopWatch = new StopWatch();
+         LOGGER.debug("STARTING STOPWATCH processRequestWithBody");
+         stopWatch.start();
+
+         base.setHeader(AUTHORIZATION, BEARER + integrationService.getAccessToken());
+         base.setHeader(CACHE_CONTRL, NO_CACHE);
+         base.setHeader(X_API_KEY, integrationService.getApiKey());
+         base.setHeader(CONTENT_TYPE, CONTENT_TYPE_APPLICATION_JSON);
+         addHeaders(base);
+
+         StringEntity input = new StringEntity(payload.toString());
+         input.setContentType(CONTENT_TYPE_APPLICATION_JSON);
+
+         if (!base.getClass().isInstance(HttpGet.class)) {
+            base.setEntity(input);
+         }
+
+         LOGGER.debug("Process call. uri = {}. payload = {}", base.getURI().toString(), payload);
+
+         try (CloseableHttpClient httpClient = helper.getHttpClient(integrationService.getTimeoutinMilliSeconds())) {
+            CloseableHttpResponse response = httpClient.execute(base);
+            final JsonObject result = responseAsJson(response);
+
+            LOGGER.debug("STOPPING STOPWATCH processRequestWithBody");
+            stopWatch.stop();
+            LOGGER.debug("Stopwatch time processRequestWithBody: {}", stopWatch);
+            stopWatch.reset();
+            return result;
+         }
+      }
+
+      private JsonObject responseAsJson(@NotNull final HttpResponse response) throws IOException {
+         String result = IOUtils.toString(response.getEntity().getContent(), CharEncoding.UTF_8);
+         JsonParser parser = new JsonParser();
+         JsonObject resultJson = new JsonObject();
+         try {
+            LOGGER.debug("Call result = {}", result);
+            resultJson = parser.parse(result).getAsJsonObject();
+         } catch (Exception e) {
+            resultJson.addProperty(RESULT_ERROR, result);
+         }
+
+         LOGGER.debug("JSON result from Service: {}", resultJson);
+         return resultJson;
+      }
+
+
+      private JsonObject performio(@NotNull String actionUrl, @NotNull Map<String, String> queryParameters) {
+         try {
+            return process(actionUrl, queryParameters, StringUtils.upperCase(method), null);
+         } catch (Exception e) {
+            LOGGER.error("Problem processing action {} in performIO", actionUrl, e);
+         }
          return new JsonObject();
       }
 
-      URIBuilder builder = new URIBuilder(actionUrl);
-      queryParameters.forEach((k, v) -> builder.addParameter(k, v));
-
-      URI uri = builder.build();
-
-      LOGGER.debug("Performing method = {}. queryParameters = {}. actionUrl = {}. payload = {}", method, queryParameters, uri, payload);
-
-      if (StringUtils.equalsIgnoreCase(method, METHOD_POST)) {
-         return processPost(uri, payload);
-      } else if (StringUtils.equalsIgnoreCase(method, METHOD_GET)) {
-         return processGet(uri);
-      } else if (StringUtils.equalsIgnoreCase(method, "PATCH")) {
-         return processPatch(uri, payload);
-      } else {
-         return new JsonObject();
+      private void addHeaders(HttpRequest request) {
+         this.specificServiceHeaders.forEach(e -> request.addHeader(e.getKey(), e.getValue()));
       }
    }
 
-   private JsonObject processGet(@NotNull final URI uri) throws IOException {
-      StopWatch stopWatch = new StopWatch();
-      LOGGER.debug("STARTING STOPWATCH {}", uri);
-      stopWatch.start();
 
-      HttpGet get = new HttpGet(uri);
-      get.setHeader(AUTHORIZATION, BEARER + integrationService.getAccessToken());
-      get.setHeader(CACHE_CONTRL, NO_CACHE);
-      get.setHeader(X_API_KEY, integrationService.getApiKey());
-      get.setHeader(CONTENT_TYPE, CONTENT_TYPE_APPLICATION_JSON);
-      addHeaders(get);
-
-      try (CloseableHttpClient httpClient = helper.getHttpClient(integrationService.getTimeoutinMilliSeconds())) {
-         CloseableHttpResponse response = httpClient.execute(get);
-         final JsonObject result = responseAsJson(response);
-
-         LOGGER.debug("Response-code {}", response.getStatusLine().getStatusCode());
-         LOGGER.debug("STOPPING STOPWATCH {}", uri);
-         stopWatch.stop();
-         LOGGER.debug("Stopwatch time: {}", stopWatch);
-         stopWatch.reset();
-
-         return result;
-      }
-   }
-
-   private JsonObject processPost(@NotNull final URI uri, @NotNull final JsonObject payload)
-         throws IOException {
-      HttpPost post = new HttpPost(uri);
-      return (payload != null) && isNotBlank(payload.toString()) ? processRequestWithBody(post, payload) : new JsonObject();
-   }
-
-   private JsonObject processPatch(@NotNull final URI uri, @NotNull final JsonObject payload)
-         throws IOException {
-      HttpPatch patch = new HttpPatch(uri);
-      return (payload != null) && isNotBlank(payload.toString()) ? processRequestWithBody(patch, payload) : new JsonObject();
-   }
-
-   private JsonObject processRequestWithBody(@NotNull final HttpEntityEnclosingRequestBase base,
-                                             @NotNull final JsonObject payload) throws IOException {
-
-      StopWatch stopWatch = new StopWatch();
-      LOGGER.debug("STARTING STOPWATCH processRequestWithBody");
-      stopWatch.start();
-
-      base.setHeader(AUTHORIZATION, BEARER + integrationService.getAccessToken());
-      base.setHeader(CACHE_CONTRL, NO_CACHE);
-      base.setHeader(X_API_KEY, integrationService.getApiKey());
-      base.setHeader(CONTENT_TYPE, CONTENT_TYPE_APPLICATION_JSON);
-      addHeaders(base);
-
-      StringEntity input = new StringEntity(payload.toString());
-      input.setContentType(CONTENT_TYPE_APPLICATION_JSON);
-
-      if (!base.getClass().isInstance(HttpGet.class)) {
-         base.setEntity(input);
-      }
-
-      LOGGER.debug("Process call. uri = {}. payload = {}", base.getURI().toString(), payload);
-
-      try (CloseableHttpClient httpClient = helper.getHttpClient(integrationService.getTimeoutinMilliSeconds())) {
-         CloseableHttpResponse response = httpClient.execute(base);
-         final JsonObject result = responseAsJson(response);
-
-         LOGGER.debug("STOPPING STOPWATCH processRequestWithBody");
-         stopWatch.stop();
-         LOGGER.debug("Stopwatch time processRequestWithBody: {}", stopWatch);
-         stopWatch.reset();
-         return result;
-      }
-   }
-
-   private JsonObject responseAsJson(@NotNull final HttpResponse response) throws IOException {
-      String result = IOUtils.toString(response.getEntity().getContent(), CharEncoding.UTF_8);
-      JsonParser parser = new JsonParser();
-      JsonObject resultJson = new JsonObject();
-      try {
-         LOGGER.debug("Call result = {}", result);
-         resultJson = parser.parse(result).getAsJsonObject();
-      } catch (Exception e) {
-         resultJson.addProperty(RESULT_ERROR, result);
-      }
-
-      LOGGER.debug("JSON result from Service: {}", resultJson);
-      return resultJson;
-   }
-
-
-   private JsonObject performio(@NotNull String actionUrl, @NotNull Map<String, String> queryParameters) {
-      try {
-         return process(actionUrl, queryParameters, StringUtils.upperCase(method), null);
-      } catch (Exception e) {
-         LOGGER.error("Problem processing action {} in performIO", actionUrl, e);
-      }
-      return new JsonObject();
-   }
-
-   private void addHeaders(HttpRequest request) {
-      this.specificServiceHeaders.forEach(e -> request.addHeader(e.getKey(), e.getValue()));
-   }
 }

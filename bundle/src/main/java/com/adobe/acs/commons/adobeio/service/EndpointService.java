@@ -19,10 +19,6 @@
  */
 package com.adobe.acs.commons.adobeio.service;
 
-import java.util.Map;
-
-import com.google.gson.JsonObject;
-
 import aQute.bnd.annotation.ProviderType;
 
 /**
@@ -35,7 +31,7 @@ import aQute.bnd.annotation.ProviderType;
  *   private EndpointService endpointService;
  */
 @ProviderType
-public interface EndpointService {
+public interface EndpointService extends Endpoint {
 
     /**
      * @return The ID of the endpoint
@@ -43,64 +39,19 @@ public interface EndpointService {
     String getId();
 
     /**
-     * @return The method of the endpoint
-     */
-    String getMethod();
-
-    /**
-     * @return The url of this endpoint
-     */
-    String getUrl();
-
-
-    /**
-     * Performs the GET-action connected to the endpoint
-     * @return JsonObject containing the result of the action
-     */
-    JsonObject performIO_Action();
-
-    /**
-     * Performs the GET-action connected to the endpoint
-     * @param queryParameters query parameters to pass to the endpoint
-     * @return JsonObject containing the result of the action
-     */
-    JsonObject performIO_Action(Map<String, String> queryParameters);
-
-    /**
-     * Performs the action connected to the endpoint
-     * @param payload JsonObject containing the data that is used in the action
-     * @return JsonObject containing the result of the action
-     */
-    JsonObject performIO_Action(JsonObject payload);
-
-    /**
      * This is a test for the connection to the endpoint.
      * The test will be performed using the URL and the GET-method.
      * @return TRUE if connection is successful
      */
     boolean isConnected();
-    
-    /**
-     * In case you want to override the default url from the configuration.
-     * 
-     * @param url the new url that needs to be used
-     */
-    void setUrl(String url);
-    
-    /**
-     * To override the headers specified via the configuration.
-     * 
-     * This needs to be specified in the format &lt;name:value&gt;
-     * 
-     * @param specificServiceHeaders array with headers
-     */
-    void setServiceSpecificHeaders(String[] specificServiceHeaders);
-    
-    /**
-     * Gets the headers that are set via the configuration.
-     * 
-     * @return an array with the headers, in the format &lt;name:value&gt;
-     */
-    String[] getConfigServiceSpecificHeaders();
-    
+
+    EndpointBuilder builder();
+
+    interface EndpointBuilder {
+        EndpointBuilder withUrl(String url);
+        EndpointBuilder withMethod(String method);
+        EndpointBuilder withServiceSpecificHeaders(String[] serviceSpecificHeaders, boolean merge);
+        Endpoint build();
+    }
+
 }
