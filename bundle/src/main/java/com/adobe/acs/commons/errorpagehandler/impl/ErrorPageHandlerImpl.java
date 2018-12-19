@@ -110,7 +110,7 @@ public final class ErrorPageHandlerImpl implements ErrorPageHandlerService {
         @AttributeDefinition(name = "Error page extension",
                 description = "Examples: html, htm, xml, json. [Optional] [Default: html]",
                       defaultValue = DEFAULT_ERROR_PAGE_EXTENSION)
-        String errorpage_extension();
+        String error$_$page_extension();
 
         @AttributeDefinition(
                 name = "Fallback error page name",
@@ -847,7 +847,7 @@ public final class ErrorPageHandlerImpl implements ErrorPageHandlerService {
 
         this.systemErrorPagePath = config.errorpage_systempath();
 
-        this.errorPageExtension = config.errorpage_extension();
+        this.errorPageExtension = config.error$_$page_extension();
 
         this.fallbackErrorName = config.errorpage_fallbackname();
         this.pathMap = configurePathMap(config.paths());
