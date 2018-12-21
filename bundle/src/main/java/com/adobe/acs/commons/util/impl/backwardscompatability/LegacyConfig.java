@@ -22,6 +22,8 @@ package com.adobe.acs.commons.util.impl.backwardscompatability;
 import com.adobe.cq.commerce.common.ValueMapDecorator;
 import org.apache.sling.api.resource.ValueMap;
 import org.osgi.service.component.ComponentContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Proxy;
 import java.util.Collections;
@@ -33,6 +35,8 @@ import java.util.stream.Collectors;
 
 public class LegacyConfig {
 
+    private static final Logger log = LoggerFactory.getLogger(LegacyConfig.class);
+
     private LegacyConfig() {
     }
 
@@ -41,13 +45,18 @@ public class LegacyConfig {
         if (interfaces.length == 0) {
             throw new IllegalArgumentException("Can only handle legacy configuration for implementations of an interface");
         }
+        Class annotationClass = interfaces[0];
 
-        return (T) Proxy.newProxyInstance(config.getClass().getClassLoader(), new Class[] { interfaces[0] }, (object, method, args) -> {
+        return (T) Proxy.newProxyInstance(config.getClass().getClassLoader(), new Class[] { annotationClass }, (object, method, args) -> {
             LegacyName legacyName = method.getAnnotation(LegacyName.class);
             if (legacyName == null) {
                 return method.invoke(config, args);
             } else {
-                return legacy.get(legacyName.value(), method.invoke(config, args));
+                String legacyPropertyName = legacyName.value();
+                if (legacy.containsKey(legacyPropertyName)) {
+                    log.warn("Legacy configuration property '{}' detected for '{}'.", legacyPropertyName, annotationClass.getName());
+                }
+                return legacy.get(legacyPropertyName, method.invoke(config, args));
             }
         });
     }
