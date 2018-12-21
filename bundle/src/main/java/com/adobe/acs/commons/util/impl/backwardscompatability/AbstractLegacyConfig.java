@@ -26,8 +26,4 @@ public abstract class AbstractLegacyConfig<T> {
         this.legacy = new ValueMapDecorator(keys.stream().collect(Collectors.toMap(Function.identity(), dictionary::get)));
     }
 
-    public Class<? extends Annotation> annotationType() {
-        return null;
-    }
-
 }

@@ -80,74 +80,56 @@ public class LegacyConfigurationProcessor extends AbstractProcessor {
         }
 
         String simpleClassName = className.substring(lastDot + 1);
+        String annotationTypeName = definition.typeElement.getQualifiedName().toString();
 
         try {
             JavaFileObject builderFile = processingEnv.getFiler().createSourceFile(className);
 
             try (PrintWriter out = new PrintWriter(builderFile.openWriter())) {
 
-                if (packageName != null) {
-                    out.print("package ");
-                    out.print(packageName);
-                    out.println(";");
-                    out.println();
-                }
+            if (packageName != null) {
+                out.printf ("package %s;\n\n", packageName);
+            }
 
                 out.println("import java.util.Map;");
                 out.println("import org.osgi.service.component.ComponentContext;");
+                out.println("import java.lang.annotation.Annotation;");
                 out.println();
 
-                out.print("class ");
-                out.print(simpleClassName);
-                out.print(" extends com.adobe.acs.commons.util.impl.backwardscompatability.AbstractLegacyConfig implements ");
-                out.print(definition.typeElement.getQualifiedName());
-                out.println(" {");
+                out.printf ("class %s extends com.adobe.acs.commons.util.impl.backwardscompatability.AbstractLegacyConfig implements %s {\n",
+                    simpleClassName, annotationTypeName);
                 out.println();
-                out.print("    private final ");
-                out.print(definition.typeElement.getQualifiedName());
-                out.print(" config;");
+                out.printf ("    private final %s config;\n", annotationTypeName);
                 out.println();
-                out.print("    public ");
-                out.print(simpleClassName);
-                out.print("(");
-                out.print(definition.typeElement.getQualifiedName());
-                out.println(" config, Map<String, Object> legacy) {");
+                out.printf ("    public %s (%s config, Map<String, Object> legacy) {\n", simpleClassName, annotationTypeName);
                 out.println("        super(legacy);");
                 out.println("        this.config = config;");
                 out.println("    }");
                 out.println();
-                out.print("    public ");
-                out.print(simpleClassName);
-                out.print("(");
-                out.print(definition.typeElement.getQualifiedName());
-                out.println(" config, ComponentContext legacy) {");
+                out.printf ("    public %s(%s config, ComponentContext legacy) {\n", simpleClassName, annotationTypeName);
                 out.println("        super(legacy);");
                 out.println("        this.config = config;");
                 out.println("    }");
                 out.println();
 
-                definition.methods.entrySet().forEach(me -> {
-                    out.println("    @Override");
-                    out.print("    public ");
-                    out.print(me.getKey().getReturnType().toString());
-                    out.print(" ");
-                    out.print(me.getKey().getSimpleName());
-                    out.println("() {");
-                    if (me.getValue() == null) {
-                        out.print("        return config.");
-                        out.print(me.getKey().getSimpleName());
-                        out.println("();");
-                    } else {
-                        out.print("        return legacy.get(\"");
-                        out.print(me.getValue());
-                        out.print("\", config.");
-                        out.print(me.getKey().getSimpleName());
-                        out.println("());");
-                    }
-                    out.println("    }");
-                    out.println();
+            definition.methods.entrySet().forEach(me -> {
+                String returnType = me.getKey().getReturnType().toString();
+                String methodName = me.getKey().getSimpleName().toString();
+                out.println("    @Override");
+                out.printf ("    public %s %s() {\n", returnType, methodName);
+            if (me.getValue() == null) {
+                out.printf ("        return config.%s();\n", methodName);
+            } else {
+                out.printf ("        return legacy.get(\"%s\", config.%s());\n", me.getValue(), methodName);
+            }
+                out.println("    }");
+                out.println();
 
-                });
+            });
+                out.println();
+                out.println("    public Class<? extends Annotation> annotationType() {");
+                out.printf ("        return %s.class;\n", annotationTypeName);
+                out.println("    }");
                 out.println("}");
             }
         } catch (IOException ex) {
