@@ -32,6 +32,7 @@ import javax.jcr.Node;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 
+import com.adobe.acs.commons.util.impl.backwardscompatability.LegacyName;
 import org.apache.commons.lang.StringUtils;
 import org.apache.sling.api.resource.LoginException;
 import org.apache.sling.api.resource.PersistenceException;
@@ -64,6 +65,8 @@ import com.day.cq.dam.api.DamConstants;
 import com.day.cq.search.PredicateGroup;
 import com.day.cq.search.Query;
 import com.day.cq.search.QueryBuilder;
+
+import static com.adobe.acs.commons.util.impl.backwardscompatability.LegacyConfig.handleLegacyConfig;
 
 
 @Component(service=EventHandler.class,immediate = true,configurationPolicy=ConfigurationPolicy.REQUIRE,property= {
@@ -114,11 +117,13 @@ public class ReviewTaskAssetMoverHandler implements EventHandler {
                        @Option(label = CONFLICT_RESOLUTION_SKIP, value = "Skip (skip)")
                },
                defaultValue = DEFAULT_DEFAULT_CONFLICT_RESOLUTION)
+       @LegacyName("conflict-resolution.default")
        String conflict_resolution_default();
        
        @AttributeDefinition(name = "Last Modified By",
                description = "For Conflict Resolution: Version, the review task event does not track the user that completed the event. Use this property to specify the static name of of the [dam:Asset]/jcr:content@jcr:lastModifiedBy. Default: Review Task",
                defaultValue = DEFAULT_LAST_MODIFIED_BY)
+       @LegacyName("conflict-resolution.version.last-modified-by")
         String conflict_resolution_version_last_modified_by();
 
     }
@@ -136,12 +141,16 @@ public class ReviewTaskAssetMoverHandler implements EventHandler {
     private String defaultConflictResolution = DEFAULT_DEFAULT_CONFLICT_RESOLUTION;
     private static final String DEFAULT_LAST_MODIFIED_BY = "Review Task";
     private String lastModifiedBy = DEFAULT_LAST_MODIFIED_BY;
-
-
+    
     @Activate
-    protected void activate(ReviewTaskAssetMoverHandler.Config config) {
+    protected void activate(ReviewTaskAssetMoverHandler.Config config, Map<String, Object> legacy) {
+        config = handleLegacyConfig(config, legacy);
+
         lastModifiedBy = StringUtils.defaultIfEmpty(config.conflict_resolution_version_last_modified_by(), DEFAULT_LAST_MODIFIED_BY);
         defaultConflictResolution = StringUtils.defaultIfEmpty(config.conflict_resolution_default(), DEFAULT_DEFAULT_CONFLICT_RESOLUTION);
+
+        log.debug("Activated ReviewTaskAssetMoverHandler with Default Conflict Resolution: [ {} ]", defaultConflictResolution);
+        log.debug("Activated ReviewTaskAssetMoverHandler with Last Modified By: [ {} ]", lastModifiedBy);
     }
 
     @Override

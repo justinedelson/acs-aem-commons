@@ -40,6 +40,7 @@ import javax.management.NotCompliantMBeanException;
 import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletException;
 
+import com.adobe.acs.commons.util.impl.backwardscompatability.LegacyName;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.sling.api.SlingConstants;
@@ -79,6 +80,8 @@ import com.day.cq.commons.inherit.InheritanceValueMap;
 import com.day.cq.commons.jcr.JcrConstants;
 import com.day.cq.search.QueryBuilder;
 
+import static com.adobe.acs.commons.util.impl.backwardscompatability.LegacyConfig.handleLegacyConfig;
+
 @Component(service=ErrorPageHandlerService.class, immediate = false)
 @Designate(ocd=ErrorPageHandlerImpl.Config.class)
 public final class ErrorPageHandlerImpl implements ErrorPageHandlerService {
@@ -110,6 +113,7 @@ public final class ErrorPageHandlerImpl implements ErrorPageHandlerService {
         @AttributeDefinition(name = "Error page extension",
                 description = "Examples: html, htm, xml, json. [Optional] [Default: html]",
                       defaultValue = DEFAULT_ERROR_PAGE_EXTENSION)
+        @LegacyName("error-page.extension")
         String errorpage_extension();
 
         @AttributeDefinition(
@@ -124,6 +128,7 @@ public final class ErrorPageHandlerImpl implements ErrorPageHandlerService {
                 description = "Absolute path to system Error page resource to serve if no other more appropriate "
                         + "error pages can be found. Does not include extension. [Optional... but highly recommended]",
                         defaultValue = DEFAULT_SYSTEM_ERROR_PAGE_PATH_DEFAULT)
+        @LegacyName("error-page.system-path")
         String errorpage_systempath();
 
       
@@ -144,6 +149,7 @@ public final class ErrorPageHandlerImpl implements ErrorPageHandlerService {
                         @Option(label = "Respond with 404", value = RESPOND_WITH_404)
                 },
                 defaultValue = DEFAULT_NOT_FOUND_DEFAULT_BEHAVIOR)
+        @LegacyName("not-found.behavior")
         String notfound_behavior();
 
         @AttributeDefinition(
@@ -152,11 +158,13 @@ public final class ErrorPageHandlerImpl implements ErrorPageHandlerService {
                         + " respond-with-404) way to the \"Not Found Behavior\". This allows the usual Not Found behavior"
                         + " to be defined via \"not-found.behavior\" with specific exclusions defined here. [Optional]",
                 cardinality = Integer.MAX_VALUE)
+        @LegacyName("not-found.exclusion-path-patterns")
         String[] notfound_exclusionpathpatterns();
         
         @AttributeDefinition(name = "Serve authenticated from cache",
                 description = "Serve authenticated requests from the error page cache. [ Default: false ]",
                 defaultValue = ""+DEFAULT_SERVE_AUTHENTICATED_FROM_CACHE)
+        @LegacyName("cache.serve-authenticated")
         boolean cache_serveauthenticated();
         
         @AttributeDefinition(name = "TTL (in seconds)",
@@ -166,6 +174,7 @@ public final class ErrorPageHandlerImpl implements ErrorPageHandlerService {
         
         @AttributeDefinition(name = "Enable placeholder images", description = "Enable image error handling  [ Default: false ]",
               defaultValue = ""+ DEFAULT_ERROR_IMAGES_ENABLED)
+        @LegacyName("error-images.enabled")
         boolean errorimages_enabled();
 
         
@@ -175,6 +184,7 @@ public final class ErrorPageHandlerImpl implements ErrorPageHandlerService {
                         + " Note: This concatenated path must resolve to a nt:file else a 200 response will be sent."
                         + " [ Optional ] [ Default: .img.png ]",
                 defaultValue = DEFAULT_ERROR_IMAGE_PATH)
+        @LegacyName("error-images.path")
         String errorimages_path();
         
         @AttributeDefinition(
@@ -184,7 +194,8 @@ public final class ErrorPageHandlerImpl implements ErrorPageHandlerService {
                         + "[ Optional ] [ Default: png, jpeg, jpeg, gif ]",
                 cardinality = Integer.MAX_VALUE,
                       defaultValue = { "png", "jpeg", "jpg", "gif" })
-       String[] errorimages_extensions();
+        @LegacyName("error-images.extensions")
+        String[] errorimages_extensions();
         
 
     }
@@ -839,6 +850,8 @@ public final class ErrorPageHandlerImpl implements ErrorPageHandlerService {
     @SuppressWarnings("squid:S1149")
     @Activate
     protected void activate(ComponentContext componentContext, ErrorPageHandlerImpl.Config config) {
+        config = handleLegacyConfig(config, componentContext);
+
         this.enabled = config.enabled();
        
         this.vanityDispatchCheckEnabled = config.vanity_dispatch_enabled();
