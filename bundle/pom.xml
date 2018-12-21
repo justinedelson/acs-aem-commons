@@ -568,5 +568,12 @@
             </exclusions>
         </dependency>
 
+        <dependency>
+            <groupId>com.adobe.acs</groupId>
+            <artifactId>legacy-annotation-processor</artifactId>
+            <version>${project.version}</version>
+            <scope>provided</scope>
+        </dependency>
+
     </dependencies>
 </project>

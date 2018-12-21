@@ -16,11 +16,11 @@ public abstract class AbstractLegacyConfig<T> {
 
     protected final ValueMap legacy;
 
-    AbstractLegacyConfig(final Map<String, Object> legacy) {
+    protected AbstractLegacyConfig(final Map<String, Object> legacy) {
         this.legacy = new ValueMapDecorator(legacy);
     }
 
-    AbstractLegacyConfig(final ComponentContext componentContext) {
+    protected AbstractLegacyConfig(final ComponentContext componentContext) {
         Dictionary<String, Object> dictionary = componentContext.getProperties();
         final List<String> keys = Collections.list(dictionary.keys());
         this.legacy = new ValueMapDecorator(keys.stream().collect(Collectors.toMap(Function.identity(), dictionary::get)));

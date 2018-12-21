@@ -32,7 +32,7 @@ import javax.jcr.Node;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 
-import com.adobe.acs.commons.util.impl.backwardscompatability.ReviewTaskAssetMoverHandlerConfig;
+import com.adobe.acs.commons.backwardscompatibility.LegacyConfiguration;
 import org.apache.commons.lang.StringUtils;
 import org.apache.sling.api.resource.LoginException;
 import org.apache.sling.api.resource.PersistenceException;
@@ -115,11 +115,13 @@ public class ReviewTaskAssetMoverHandler implements EventHandler {
                        @Option(label = CONFLICT_RESOLUTION_SKIP, value = "Skip (skip)")
                },
                defaultValue = DEFAULT_DEFAULT_CONFLICT_RESOLUTION)
+       @LegacyConfiguration("conflict-resolution.default")
        String conflict_resolution_default();
        
        @AttributeDefinition(name = "Last Modified By",
                description = "For Conflict Resolution: Version, the review task event does not track the user that completed the event. Use this property to specify the static name of of the [dam:Asset]/jcr:content@jcr:lastModifiedBy. Default: Review Task",
                defaultValue = DEFAULT_LAST_MODIFIED_BY)
+       @LegacyConfiguration("conflict-resolution.version.last-modified-by")
         String conflict_resolution_version_last_modified_by();
 
     }
@@ -140,7 +142,7 @@ public class ReviewTaskAssetMoverHandler implements EventHandler {
     
     @Activate
     protected void activate(ReviewTaskAssetMoverHandler.Config config, Map<String, Object> legacy) {
-        config = new ReviewTaskAssetMoverHandlerConfig(config, legacy);
+        config = new ReviewTaskAssetMoverHandlerLegacyConfig(config, legacy);
 
         lastModifiedBy = StringUtils.defaultIfEmpty(config.conflict_resolution_version_last_modified_by(), DEFAULT_LAST_MODIFIED_BY);
         defaultConflictResolution = StringUtils.defaultIfEmpty(config.conflict_resolution_default(), DEFAULT_DEFAULT_CONFLICT_RESOLUTION);
