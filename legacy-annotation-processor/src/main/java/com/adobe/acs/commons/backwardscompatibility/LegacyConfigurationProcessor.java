@@ -148,29 +148,6 @@ public class LegacyConfigurationProcessor extends AbstractProcessor {
                     out.println();
 
                 });
-
-/*
-                setterMap.entrySet().forEach(setter -> {
-                    String methodName = setter.getKey();
-                    String argumentType = setter.getValue();
-
-                    out.print("    public ");
-                    out.print(builderSimpleClassName);
-                    out.print(" ");
-                    out.print(methodName);
-
-                    out.print("(");
-
-                    out.print(argumentType);
-                    out.println(" value) {");
-                    out.print("        object.");
-                    out.print(methodName);
-                    out.println("(value);");
-                    out.println("        return this;");
-                    out.println("    }");
-                    out.println();
-                });*/
-
                 out.println("}");
             }
         } catch (IOException ex) {
