@@ -32,6 +32,7 @@ import javax.jcr.Node;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 
+import com.adobe.acs.commons.util.impl.backwardscompatability.ReviewTaskAssetMoverHandlerConfig;
 import org.apache.commons.lang.StringUtils;
 import org.apache.sling.api.resource.LoginException;
 import org.apache.sling.api.resource.PersistenceException;
@@ -136,12 +137,16 @@ public class ReviewTaskAssetMoverHandler implements EventHandler {
     private String defaultConflictResolution = DEFAULT_DEFAULT_CONFLICT_RESOLUTION;
     private static final String DEFAULT_LAST_MODIFIED_BY = "Review Task";
     private String lastModifiedBy = DEFAULT_LAST_MODIFIED_BY;
-
-
+    
     @Activate
-    protected void activate(ReviewTaskAssetMoverHandler.Config config) {
+    protected void activate(ReviewTaskAssetMoverHandler.Config config, Map<String, Object> legacy) {
+        config = new ReviewTaskAssetMoverHandlerConfig(config, legacy);
+
         lastModifiedBy = StringUtils.defaultIfEmpty(config.conflict_resolution_version_last_modified_by(), DEFAULT_LAST_MODIFIED_BY);
         defaultConflictResolution = StringUtils.defaultIfEmpty(config.conflict_resolution_default(), DEFAULT_DEFAULT_CONFLICT_RESOLUTION);
+
+        log.debug("Activated ReviewTaskAssetMoverHandler with Default Conflict Resolution: [ {} ]", defaultConflictResolution);
+        log.debug("Activated ReviewTaskAssetMoverHandler with Last Modified By: [ {} ]", lastModifiedBy);
     }
 
     @Override

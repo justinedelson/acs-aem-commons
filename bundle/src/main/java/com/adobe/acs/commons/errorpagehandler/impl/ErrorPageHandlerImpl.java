@@ -40,6 +40,7 @@ import javax.management.NotCompliantMBeanException;
 import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletException;
 
+import com.adobe.acs.commons.util.impl.backwardscompatability.ErrorPageHandlerImplConfig;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.sling.api.SlingConstants;
@@ -79,7 +80,7 @@ import com.day.cq.commons.inherit.InheritanceValueMap;
 import com.day.cq.commons.jcr.JcrConstants;
 import com.day.cq.search.QueryBuilder;
 
-@Component(service=ErrorPageHandlerService.class, immediate = false)
+@Component(service=ErrorPageHandlerService.class)
 @Designate(ocd=ErrorPageHandlerImpl.Config.class)
 public final class ErrorPageHandlerImpl implements ErrorPageHandlerService {
 
@@ -839,6 +840,8 @@ public final class ErrorPageHandlerImpl implements ErrorPageHandlerService {
     @SuppressWarnings("squid:S1149")
     @Activate
     protected void activate(ComponentContext componentContext, ErrorPageHandlerImpl.Config config) {
+        config = new ErrorPageHandlerImplConfig(config, componentContext);
+
         this.enabled = config.enabled();
        
         this.vanityDispatchCheckEnabled = config.vanity_dispatch_enabled();
