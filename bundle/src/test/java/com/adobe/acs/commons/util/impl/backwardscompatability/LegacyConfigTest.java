@@ -20,9 +20,11 @@
 package com.adobe.acs.commons.util.impl.backwardscompatability;
 
 import org.junit.Test;
+import org.osgi.service.component.ComponentContext;
 
 import java.lang.annotation.Annotation;
 import java.util.Collections;
+import java.util.Hashtable;
 
 import static org.mockito.Mockito.*;
 import static org.junit.Assert.*;
@@ -30,7 +32,7 @@ import static org.junit.Assert.*;
 public class LegacyConfigTest {
 
     @Test
-    public void handleLegacyConfig() {
+    public void handleLegacyConfigMap() {
         Test1 impl = new Test1() {
             @Override
             public String fromLegacy() {
@@ -48,6 +50,36 @@ public class LegacyConfigTest {
             }
         };
         Test1 proxied = LegacyConfig.handleLegacyConfig(impl, Collections.singletonMap("legacy", "old value"));
+        assertEquals("old value", proxied.fromLegacy());
+        assertEquals("also a new value", proxied.noLegacy());
+
+    }
+
+    @Test
+    public void handleLegacyConfigComponentContext() {
+        Test1 impl = new Test1() {
+            @Override
+            public String fromLegacy() {
+                return "new value";
+            }
+
+            @Override
+            public String noLegacy() {
+                return "also a new value";
+            }
+
+            @Override
+            public Class<? extends Annotation> annotationType() {
+                return Test1.class;
+            }
+        };
+
+        Hashtable<String, Object> properties = new Hashtable<>();
+        properties.put("legacy", "old value");
+        ComponentContext componentContext = mock(ComponentContext.class);
+        when(componentContext.getProperties()).thenReturn(properties);
+
+        Test1 proxied = LegacyConfig.handleLegacyConfig(impl, componentContext);
         assertEquals("old value", proxied.fromLegacy());
         assertEquals("also a new value", proxied.noLegacy());
 
